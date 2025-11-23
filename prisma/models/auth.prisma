@@ -1,0 +1,13 @@
+model Auth {
+    id        String   @id @default(cuid())
+    user      User     @relation(fields: [userId], references: [id])
+    userId    String
+    email     String   @unique @db.VarChar(100)
+    password  String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId])
+    @@map("auth")
+    @@schema("users")
+}
