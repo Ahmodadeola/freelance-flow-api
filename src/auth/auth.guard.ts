@@ -1,0 +1,41 @@
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { CanActivate, ExecutionContext, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { Cache } from "cache-manager";
+import { Request } from "express";
+import { handleJWTTokenError } from "src/common/helper";
+import { AuthTokens } from "./auth.interface";
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+    constructor(private jwtService: JwtService, @Inject(CACHE_MANAGER) private cacheManager: Cache) { }
+
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const request = context.switchToHttp().getRequest();
+        const token = this.extractTokenFromHeader(request);
+
+        if (!token) {
+            return false;
+        }
+
+        try {
+            const payload = await this.jwtService.verifyAsync(token, { secret: process.env.JWT_SECRET });
+            const cachedTokens = await this.cacheManager.get<AuthTokens>(payload.sub);
+
+            if (!cachedTokens || cachedTokens.accessToken !== token) {
+                throw new UnauthorizedException('Invalid access token');
+            }
+
+            request.user = payload;
+            return true;
+        } catch (error) {
+            handleJWTTokenError(error);
+            return false;
+        }
+    }
+
+    private extractTokenFromHeader(request: Request): string | undefined {
+        const [type, token] = request.headers.authorization?.split(' ') ?? [];
+        return type === 'Bearer' ? token : undefined;
+    }
+}

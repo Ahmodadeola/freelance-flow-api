@@ -3,7 +3,7 @@ model Auth {
     user      User     @relation(fields: [userId], references: [id])
     userId    String
     email     String   @unique @db.VarChar(100)
-    password  String?
+    password  String
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
