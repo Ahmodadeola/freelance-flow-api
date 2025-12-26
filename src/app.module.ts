@@ -7,9 +7,12 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import configLoader from 'config/loader';
+
 
 @Module({
   imports: [ConfigModule.forRoot({
+    load: configLoader(),
     isGlobal: true,
     ignoreEnvFile: true,
   }), UsersModule, AuthModule],
