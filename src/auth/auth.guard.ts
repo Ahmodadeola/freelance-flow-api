@@ -5,10 +5,11 @@ import { Cache } from "cache-manager";
 import { Request } from "express";
 import { handleJWTTokenError } from "src/common/helper";
 import { AuthTokens } from "./auth.interface";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-    constructor(private jwtService: JwtService, @Inject(CACHE_MANAGER) private cacheManager: Cache) { }
+    constructor(private jwtService: JwtService, private configService: ConfigService, @Inject(CACHE_MANAGER) private cacheManager: Cache) { }
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest();
@@ -19,7 +20,7 @@ export class AuthGuard implements CanActivate {
         }
 
         try {
-            const payload = await this.jwtService.verifyAsync(token, { secret: process.env.JWT_SECRET });
+            const payload = await this.jwtService.verifyAsync(token, { secret: this.configService.get<string>('jwt.accessTokenSecret') });
             const cachedTokens = await this.cacheManager.get<AuthTokens>(payload.sub);
 
             if (!cachedTokens || cachedTokens.accessToken !== token) {
