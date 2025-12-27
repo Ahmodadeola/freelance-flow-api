@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MaxLength, MinLength } from "class-validator";
+import { IsEmail, IsNotEmpty, IsString, IsStrongPassword, MaxLength } from "class-validator";
 
 export class CreateUserDto {
     @IsEmail()
@@ -14,8 +14,6 @@ export class CreateUserDto {
     @MaxLength(50)
     lastName: string;
 
-    @IsNotEmpty()
-    @IsString()
-    @MinLength(8)
+    @IsStrongPassword()
     password: string;
 }
