@@ -9,7 +9,8 @@ export class ResponseInterceptor implements NestInterceptor {
     }
 
     apiResponse(data: Record<string, any>) {
-        if (data && !!data.records && !!data.page)
+        if (data.hasOwnProperty("message") && Object.keys(data).length == 1) return data
+        else if (data && !!data.records && !!data.page)
             return {
                 data: data.records,
                 meta: {
@@ -19,6 +20,7 @@ export class ResponseInterceptor implements NestInterceptor {
                     total: data.total,
                 },
             };
+
         return { data };
     }
 }

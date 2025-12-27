@@ -1,4 +1,4 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { hash, verify } from 'argon2';
@@ -10,6 +10,8 @@ import { handleJWTTokenError } from 'src/common/helper';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AuthTokens } from './auth.interface';
+import { PasswordResetDto } from './dto/password-reset.dto';
+import { Auth } from 'generated/prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -63,6 +65,27 @@ export class AuthService {
         } catch (error) {
             handleJWTTokenError(error);
         }
+    }
+
+    async resetPassword(passwordResetDto: PasswordResetDto, userId: string) {
+        const { oldPassword, newPassword } = passwordResetDto
+        const auth: Auth | null = await this.prisma.auth.findUnique({
+            where: { userId }
+        });
+        if (!auth) throw new NotFoundException('User not found')
+
+        const oldPasswordMatch = await verify(auth.password, oldPassword)
+        if (!oldPasswordMatch) throw new BadRequestException("Old password is incorrect!")
+
+        const hashedPassword = await hash(newPassword)
+        await this.prisma.auth.update({
+            where: { userId },
+            data: {
+                password: hashedPassword
+            }
+        })
+
+        return { message: 'Password reset successful' }
     }
 
     async logout(userId: string) {
