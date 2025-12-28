@@ -1,4 +1,4 @@
-
+const { DB_PROVIDER, DB_USER, DB_PASSWORD, DB_PORT, DB_HOST, DB_NAME } = process.env
 export default () => ({
     jwt: {
         accessTokenSecret: process.env.JWT_SECRET,
@@ -11,6 +11,6 @@ export default () => ({
         host: process.env.HOST || 'localhost',
     },
     database: {
-        url: process.env.DATABASE_URL
+        url: `${DB_PROVIDER}://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`,
     }
 })
