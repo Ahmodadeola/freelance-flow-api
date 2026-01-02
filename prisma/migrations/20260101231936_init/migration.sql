@@ -9,7 +9,7 @@ CREATE TABLE "users"."auth" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "email" VARCHAR(100) NOT NULL,
-    "password" TEXT,
+    "password" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -39,4 +39,4 @@ CREATE UNIQUE INDEX "auth_userId_key" ON "users"."auth"("userId");
 CREATE UNIQUE INDEX "users_email_key" ON "users"."users"("email");
 
 -- AddForeignKey
-ALTER TABLE "users"."auth" ADD CONSTRAINT "auth_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"."users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "users"."auth" ADD CONSTRAINT "auth_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
