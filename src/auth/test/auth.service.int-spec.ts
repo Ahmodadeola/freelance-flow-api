@@ -3,7 +3,7 @@ import { AppModule } from "src/app.module"
 import { PrismaService } from "src/prisma/prisma.service"
 import { faker } from '@faker-js/faker'
 
-import { ConflictException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ConflictException, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { AuthService } from "../auth.service";
 import { SignupDto } from "../dto/signup.dto";
 import { LoginDto } from "../dto/login.dto";
@@ -12,6 +12,7 @@ import RefreshTokensDto from "../dto/refresh-tokens.dto";
 import { Cache } from "@nestjs/cache-manager";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
+import { PasswordResetDto } from "../dto/password-reset.dto";
 
 let prismaService: PrismaService;
 let authService: AuthService;
@@ -20,12 +21,14 @@ let configService: ConfigService;
 let signupDto: SignupDto;
 let cacheManager: Cache
 
-const randomSignupDto = () => ({
-    email: faker.internet.email(),
-    firstName: faker.person.firstName(),
-    lastName: faker.person.lastName(),
-    password: faker.internet.password()
+const randomSignupDto = (opts: Record<string, any> = {}) => ({
+    email: opts?.email || faker.internet.email(),
+    firstName: opts?.firstName || faker.person.firstName(),
+    lastName: opts?.lastName || faker.person.lastName(),
+    password: opts?.password || faker.internet.password()
 })
+
+const createRandomAuthUser = async (opts = {}) => await authService.signup(randomSignupDto(opts))
 
 beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -72,7 +75,7 @@ describe("User login", () => {
     let user: User
 
     beforeEach(async () => {
-        user = await authService.signup(signupDto);
+        user = await createRandomAuthUser(signupDto)
         loginDto = {
             email: user.email,
             password: signupDto.password
@@ -117,13 +120,8 @@ describe("Tokens refresh", () => {
 
         // Simulate token expiration by deleting the cached token
         await cacheManager.del(user.id)
+        await expect(authService.refreshTokens(refreshTokenDto)).rejects.toThrow(UnauthorizedException)
 
-        try {
-            await authService.refreshTokens(refreshTokenDto)
-        } catch (error) {
-            expect(error).toBeInstanceOf(UnauthorizedException)
-            expect(error.message).toBe('Invalid tokens')
-        }
     })
 
     test("with an expired refresh token", async () => {
@@ -135,34 +133,21 @@ describe("Tokens refresh", () => {
 
         // add tokens to cache 
         await cacheManager.set(payload.sub, tokens, 1000 * configService.get<number>('jwt.refreshTokenExpiresIn')!);
-
-        try {
-            await authService.refreshTokens(tokens)
-        } catch (error) {
-            expect(error).toBeInstanceOf(UnauthorizedException)
-        }
+        await expect(authService.refreshTokens(tokens)).rejects.toThrow(UnauthorizedException)
     });
 
 
     test("with an already rotated token", async () => {
         const result = await authService.refreshTokens(refreshTokenDto)
         expect(result).toBeTruthy()
-        try {
-            await authService.refreshTokens(refreshTokenDto)
-        } catch (error) {
-            expect(error).toBeInstanceOf(UnauthorizedException)
-        }
+
+        await expect(authService.refreshTokens(refreshTokenDto)).rejects.toThrow(UnauthorizedException)
     })
 
     test("with mismatching tokens", async () => {
         const result = await authService.refreshTokens(refreshTokenDto)
         expect(result).toBeTruthy()
-        try {
-            await authService.refreshTokens({ ...refreshTokenDto, refreshToken: result?.refreshToken! })
-        } catch (error) {
-            expect(error).toBeInstanceOf(UnauthorizedException)
-            expect(error.message).toBe('Invalid tokens')
-        }
+        await expect(authService.refreshTokens({ ...refreshTokenDto, refreshToken: result?.refreshToken! })).rejects.toThrow(UnauthorizedException)
     })
 
     test("with cross user tokens", async () => {
@@ -170,19 +155,72 @@ describe("Tokens refresh", () => {
         const user2 = await authService.signup(newUserSignupDto)
         const loginResult = await authService.login({ email: user2.email, password: newUserSignupDto.password })
 
-        try {
-            await authService.refreshTokens({ ...refreshTokenDto, refreshToken: loginResult?.tokens.refreshToken! })
-        } catch (error) {
-            expect(error).toBeInstanceOf(UnauthorizedException)
-        }
+        await expect(authService.refreshTokens({ ...refreshTokenDto, refreshToken: loginResult?.tokens.refreshToken! })).rejects.toThrow(UnauthorizedException)
     })
 
     test("with a malformed token", async () => {
-        try {
-            await authService.refreshTokens({ ...refreshTokenDto, refreshToken: faker.string.alphanumeric(20) })
-        } catch (error) {
-            expect(error).toBeInstanceOf(UnauthorizedException)
-            expect(error.message).toBe('Invalid token')
-        }
+        await expect(authService.refreshTokens({ ...refreshTokenDto, refreshToken: faker.string.alphanumeric(20) })).rejects.toThrow(UnauthorizedException)
+    })
+})
+
+describe("Resetting user password", () => {
+    let passwordResetDto: PasswordResetDto;
+    let user: User;
+
+    beforeEach(async () => {
+        user = await createRandomAuthUser(signupDto)
+    })
+
+    test("for a non-existing user", async () => {
+        passwordResetDto = { oldPassword: faker.internet.password(), newPassword: faker.internet.password() }
+        await expect(authService.resetPassword(passwordResetDto, faker.string.uuid())).rejects.toThrow(new NotFoundException("User not found!"))
+    })
+
+    test("for an existing user", async () => {
+        const newPassword = faker.internet.password()
+        passwordResetDto = { oldPassword: signupDto.password, newPassword }
+        const resetResult = await authService.resetPassword(passwordResetDto, user.id)
+
+        expect(resetResult).toHaveProperty('message', 'Password reset successful')
+
+        const loginResult = await authService.login({ email: user.email, password: newPassword })
+        expect(loginResult).toHaveProperty('tokens')
+        expect(loginResult).toHaveProperty('user.email', user.email)
+    })
+
+    test("with an incorrect old password", async () => {
+        const newPassword = faker.internet.password()
+        passwordResetDto = { oldPassword: faker.internet.password(), newPassword }
+
+        await expect(authService.resetPassword(passwordResetDto, user.id)).rejects.toThrow(new BadRequestException("Old password is incorrect!"))
+    })
+
+    test("when old password equals new password", async () => {
+        passwordResetDto = { oldPassword: signupDto.password, newPassword: signupDto.password }
+        await expect(authService.resetPassword(passwordResetDto, user.id)).rejects.toThrow(new BadRequestException("New password cannot be the same as old password"))
+    })
+})
+
+describe("User logout", () => {
+    let user: User;
+    beforeEach(async () => {
+        user = await createRandomAuthUser(signupDto)
+    })
+
+    test("when user is logged in", async () => {
+        await authService.login({ email: user.email, password: signupDto.password })
+
+        const logoutResult = await authService.logout(user.id)
+        expect(logoutResult).toHaveProperty("message", 'Logged out successfully')
+
+        expect(await cacheManager.get(user.id)).toBeUndefined()
+    })
+
+    test("when user isn't logged in", async () => {
+        const logoutResult = await authService.logout(user.id)
+        expect(logoutResult).toHaveProperty("message", 'Logged out successfully')
+
+        expect(await cacheManager.get(user.id)).toBeUndefined()
+
     })
 })

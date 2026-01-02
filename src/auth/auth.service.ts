@@ -12,6 +12,8 @@ import { AuthTokens } from './auth.interface';
 import { PasswordResetDto } from './dto/password-reset.dto';
 import { Auth } from 'generated/prisma/client';
 import { SignupDto } from './dto/signup.dto';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AuthService {
@@ -30,7 +32,10 @@ export class AuthService {
                 return user
             })
         } catch (error) {
-            throw new ConflictException("User with this email already exists")
+            if (error instanceof PrismaClientKnownRequestError && error.code === "P2002") {
+                throw new ConflictException('User with this email already exists');
+            }
+            throw error;
         }
     }
 
@@ -54,14 +59,12 @@ export class AuthService {
         try {
             const refreshPayload = this.jwtService.verify(refreshTokensDto.refreshToken, { secret: this.configService.get<string>('jwt.refreshTokenSecret') });
 
-
             const cachedTokens = await this.cacheManager.get<AuthTokens>(refreshPayload.sub);
             const isTokenMatch = cachedTokens?.refreshToken === refreshTokensDto.refreshToken && cachedTokens?.accessToken === refreshTokensDto.accessToken;
             if (!cachedTokens || !isTokenMatch) {
                 throw new UnauthorizedException('Invalid tokens');
             }
             const tokens = await this.generateTokens(refreshPayload.sub, refreshPayload.email, refreshPayload.role);
-
             await this.cacheManager.set(refreshPayload.sub, tokens, 1000 * this.configService.get<number>('jwt.refreshTokenExpiresIn')!);
 
             return tokens
@@ -72,10 +75,11 @@ export class AuthService {
 
     async resetPassword(passwordResetDto: PasswordResetDto, userId: string) {
         const { oldPassword, newPassword } = passwordResetDto
+        if (oldPassword === newPassword) throw new BadRequestException("New password cannot be the same as old password")
         const auth: Auth | null = await this.prisma.auth.findUnique({
             where: { userId }
         });
-        if (!auth) throw new NotFoundException('User not found')
+        if (!auth) throw new NotFoundException('User not found!')
 
         const oldPasswordMatch = await verify(auth.password, oldPassword)
         if (!oldPasswordMatch) throw new BadRequestException("Old password is incorrect!")
@@ -103,7 +107,7 @@ export class AuthService {
     }
 
     private async generateTokens(userId: string, email: string, role: string) {
-        const payload = { sub: userId, email, role };
+        const payload = { sub: userId, email, role, iat: Math.floor(Date.now()), jti: randomUUID() };
         const accessToken = this.jwtService.sign(payload);
         const refreshToken = this.jwtService.sign(payload, { secret: this.configService.get('jwt.refreshTokenSecret'), expiresIn: '7d' });
 
