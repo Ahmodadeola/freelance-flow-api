@@ -1,6 +1,5 @@
-import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { hash, verify } from 'argon2';
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -12,23 +11,27 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AuthTokens } from './auth.interface';
 import { PasswordResetDto } from './dto/password-reset.dto';
 import { Auth } from 'generated/prisma/client';
+import { SignupDto } from './dto/signup.dto';
 
 @Injectable()
 export class AuthService {
     constructor(private readonly prisma: PrismaService, private jwtService: JwtService, private readonly configService: ConfigService, @Inject(CACHE_MANAGER) private cacheManager: Cache) { }
 
-    async signup(createUserDto: CreateUserDto) {
-        const newUser = await this.prisma.$transaction(async tx => {
-            const { password, ...userData } = createUserDto
-            const user = await tx.user.create({ data: userData })
+    async signup(signupDto: SignupDto) {
 
-            const hashedPassword = await hash(password)
-            await tx.auth.create({ data: { userId: user.id, email: createUserDto.email, password: hashedPassword } })
-            return user
-        })
+        // use prisma transaction to create a user and an auth object
+        try {
+            return await this.prisma.$transaction(async tx => {
+                const { password, ...userData } = signupDto
+                const user = await tx.user.create({ data: userData })
 
-
-        return newUser
+                const hashedPassword = await hash(password)
+                await tx.auth.create({ data: { userId: user.id, email: signupDto.email, password: hashedPassword } })
+                return user
+            })
+        } catch (error) {
+            throw new ConflictException("User with this email already exists")
+        }
     }
 
     async login(loginDto: LoginDto) {
