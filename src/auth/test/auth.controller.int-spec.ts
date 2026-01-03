@@ -3,7 +3,7 @@ import { SignupDto } from "../dto/signup.dto";
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { App } from "supertest/types";
 import request from 'supertest';
-import { Role } from "generated/prisma/enums";
+import { AccountStatus, Role } from "generated/prisma/enums";
 import { AuthService } from "../auth.service";
 import { LoginDto } from "../dto/login.dto";
 import { User } from "generated/prisma/client";
@@ -47,7 +47,8 @@ describe("Registering a new user", () => {
             .send(signupDto)
             .expect(201)
             .then(({ body: { data: user } }) => {
-                expect(user.role).toBe(Role.FREELANCER)
+                expect(user.status).toBe(AccountStatus.ACTIVE)
+                expect(user.verified).toBe(false)
                 Object.entries(signupDto).forEach(([key, value]) => {
                     if (key !== "password") expect(value).toBe(user[key])
                 })
@@ -104,7 +105,7 @@ describe("User login", () => {
             .send(loginDto)
             .expect(200)
             .then(({ body: { data: { user, tokens } } }) => {
-                expect(user.role).toBe(Role.FREELANCER)
+                expect(user.email).toBe(loginDto.email)
                 expect(tokens).toHaveProperty('accessToken')
                 expect(tokens).toHaveProperty('refreshToken')
             })

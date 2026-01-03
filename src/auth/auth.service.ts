@@ -10,7 +10,7 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AuthTokens } from './auth.interface';
 import { PasswordResetDto } from './dto/password-reset.dto';
-import { Auth } from 'generated/prisma/client';
+import { Auth, Role } from 'generated/prisma/client';
 import { SignupDto } from './dto/signup.dto';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { randomUUID } from 'crypto';
@@ -49,8 +49,9 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        const tokens = await this.generateTokens(auth.userId, auth.email, auth.user.role);
+        const tokens = await this.generateTokens(auth.userId, auth.email, Role.FREELANCER);
         await this.cacheManager.set(auth.userId, tokens, 1000 * this.configService.get<number>('jwt.refreshTokenExpiresIn')!);
+        await this.prisma.auth.update({ where: { id: auth.id }, data: { lastLoginAt: new Date() } })
         return { tokens, user: auth.user };
     }
 
