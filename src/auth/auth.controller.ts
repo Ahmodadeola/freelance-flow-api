@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './auth.guard';
 import RefreshTokensDto from './dto/refresh-tokens.dto';
 import { PasswordResetDto } from './dto/password-reset.dto';
+import { SignupDto } from './dto/signup.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -12,8 +13,8 @@ export class AuthController {
 
 
   @Post('signup')
-  async signup(@Body() createUserDto: CreateUserDto) {
-    return await this.authService.signup(createUserDto);
+  async signup(@Body() signupDto: SignupDto) {
+    return await this.authService.signup(signupDto);
   }
 
   @Post('login')
@@ -37,9 +38,8 @@ export class AuthController {
   @Patch("password-reset")
   @UseGuards(AuthGuard)
   @HttpCode(200)
-  async resetPassword(@Request() req, @Body() passwordResetDto: PasswordResetDto) {
+  async resetPassword(@Request() req: Request & { user: Record<string, any> }, @Body() passwordResetDto: PasswordResetDto) {
     return await this.authService.resetPassword(passwordResetDto, req.user.sub)
-
   }
 
   @UseGuards(AuthGuard)

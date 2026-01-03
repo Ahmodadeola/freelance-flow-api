@@ -16,6 +16,7 @@
   "moduleNameMapper": {
     "^src/(.*)$": "<rootDir>/src/$1",
     "^generated/(.*)$": "<rootDir>/generated/$1",
-    "^config$": "<rootDir>/config"
+    "^config$": "<rootDir>/config",
+    "^test/(.*)$": "<rootDir>/test/$1"
   }
 }

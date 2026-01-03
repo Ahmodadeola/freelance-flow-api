@@ -28,7 +28,6 @@ beforeEach(() => {
     }
 })
 
-
 describe('Creating a user', () => {
     test('with valid data', async () => {
         const user = await userService.create(userDto)
