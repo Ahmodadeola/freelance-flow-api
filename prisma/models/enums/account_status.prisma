@@ -1,0 +1,7 @@
+enum AccountStatus {
+    ACTIVE
+    SUSPENDED
+    DELETED
+
+    @@schema("users")
+}

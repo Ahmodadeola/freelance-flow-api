@@ -5,7 +5,7 @@ import { BadRequestException, ConflictException, NotFoundException, Unauthorized
 import { AuthService } from "../auth.service";
 import { SignupDto } from "../dto/signup.dto";
 import { LoginDto } from "../dto/login.dto";
-import { Role, User } from "generated/prisma/client";
+import { AccountStatus, Role, User } from "generated/prisma/client";
 import RefreshTokensDto from "../dto/refresh-tokens.dto";
 import { Cache } from "@nestjs/cache-manager";
 import { JwtService } from "@nestjs/jwt";
@@ -29,7 +29,6 @@ beforeAll(async () => {
     jwtService = ctx.jwtService
     configService = ctx.configService
     cacheManager = ctx.cacheManager
-    await prismaService.flush()
 })
 
 beforeEach(() => {
@@ -39,7 +38,8 @@ beforeEach(() => {
 describe("Registering a new user", () => {
     test("with valid details", async () => {
         const user = await authService.signup(signupDto)
-        expect(user.role).toBe(Role.FREELANCER)
+        expect(user.status).toBe(AccountStatus.ACTIVE)
+        expect(user.verified).toBe(false)
         Object.entries(signupDto).forEach(([key, value]) => {
             if (key !== "password") expect(value).toBe(user[key])
         })
@@ -106,7 +106,7 @@ describe("Tokens refresh", () => {
 
     test("with an expired refresh token", async () => {
         // Generate expired tokens
-        const payload = { sub: user.id, email: user.email, role: user.role };
+        const payload = { sub: user.id, email: user.email, role: Role.FREELANCER };
         const accessToken = jwtService.sign(payload);
         const refreshToken = jwtService.sign(payload, { secret: configService.get('jwt.refreshTokenSecret'), expiresIn: '-1h' });
         const tokens = { accessToken, refreshToken }
@@ -205,6 +205,19 @@ describe("User logout", () => {
     })
 })
 
-afterAll(async () => {
-    await prismaService.flush()
-});
+describe("Fetching user profile", () => {
+    test("for an exisiting ", async () => {
+        const user = await createRandomAuthUser(authService, signupDto)
+        const profile = await authService.profile(user.id)
+
+        expect(profile?.verified).toBe(false)
+        Object.entries(signupDto).forEach(([key, value]) => {
+            if (key !== "password") expect(value).toBe(user[key])
+        })
+
+    })
+
+    test("for a non-existing user", async () => {
+        await expect(authService.profile(faker.string.alphanumeric(20))).rejects.toThrow(new NotFoundException("User not found!"))
+    })
+})

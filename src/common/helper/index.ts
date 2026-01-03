@@ -12,3 +12,16 @@ export const handleJWTTokenError = (error) => {
     }
 }
 
+export const pickObjectFields = (obj: object, keys: Array<string>): Record<string, any> => {
+    return Object.entries(obj).reduce((acc, [key, val]) => {
+        if (keys.includes(key)) acc[key] = val
+        return acc
+    }, {})
+}
+
+export const dropObjectFields = (obj: object, keys: Array<string>): Record<string, any> => {
+    return Object.entries(obj).reduce((acc, [key, val]) => {
+        if (!keys.includes(key)) acc[key] = val
+        return acc
+    }, {})
+}

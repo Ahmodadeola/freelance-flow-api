@@ -1,10 +1,10 @@
 import { Test } from "@nestjs/testing"
 import { AppModule } from "src/app.module"
 import { PrismaService } from "src/prisma/prisma.service"
-import { faker } from '@faker-js/faker'
 import { UsersService } from "../users.service";
 import { CreateUserDto } from "../dto/create-user.dto";
 import { ConflictException } from "@nestjs/common";
+import { randomCreateUserDto } from "test/test_utils";
 
 let prismaService: PrismaService;
 let userService: UsersService;
@@ -17,15 +17,10 @@ beforeAll(async () => {
     }).compile()
     prismaService = moduleRef.get(PrismaService)
     userService = moduleRef.get(UsersService)
-    await prismaService.flush()
 })
 
 beforeEach(() => {
-    userDto = {
-        email: faker.internet.email(),
-        firstName: faker.person.firstName(),
-        lastName: faker.person.lastName(),
-    }
+    userDto = randomCreateUserDto()
 })
 
 describe('Creating a user', () => {
