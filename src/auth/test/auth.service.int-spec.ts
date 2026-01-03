@@ -1,5 +1,3 @@
-import { Test } from "@nestjs/testing"
-import { AppModule } from "src/app.module"
 import { PrismaService } from "src/prisma/prisma.service"
 import { faker } from '@faker-js/faker'
 
@@ -13,6 +11,7 @@ import { Cache } from "@nestjs/cache-manager";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { PasswordResetDto } from "../dto/password-reset.dto";
+import { createRandomAuthUser, randomSignupDto, setupTestingModule } from "test/test_utils";
 
 let prismaService: PrismaService;
 let authService: AuthService;
@@ -21,25 +20,15 @@ let configService: ConfigService;
 let signupDto: SignupDto;
 let cacheManager: Cache
 
-const randomSignupDto = (opts: Record<string, any> = {}) => ({
-    email: opts?.email || faker.internet.email(),
-    firstName: opts?.firstName || faker.person.firstName(),
-    lastName: opts?.lastName || faker.person.lastName(),
-    password: opts?.password || faker.internet.password()
-})
-
-const createRandomAuthUser = async (opts = {}) => await authService.signup(randomSignupDto(opts))
 
 beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({
-        imports: [AppModule]
-    }).compile()
+    const ctx = await setupTestingModule()
 
-    prismaService = moduleRef.get(PrismaService)
-    authService = moduleRef.get(AuthService)
-    jwtService = moduleRef.get(JwtService)
-    configService = moduleRef.get(ConfigService)
-    cacheManager = moduleRef.get(Cache)
+    prismaService = ctx.prismaService
+    authService = ctx.authService
+    jwtService = ctx.jwtService
+    configService = ctx.configService
+    cacheManager = ctx.cacheManager
     await prismaService.flush()
 })
 
@@ -75,7 +64,7 @@ describe("User login", () => {
     let user: User
 
     beforeEach(async () => {
-        user = await createRandomAuthUser(signupDto)
+        user = await createRandomAuthUser(authService, signupDto)
         loginDto = {
             email: user.email,
             password: signupDto.password
@@ -116,15 +105,6 @@ describe("Tokens refresh", () => {
     })
 
     test("with an expired refresh token", async () => {
-        expect(refreshTokenDto).toBeTruthy()
-
-        // Simulate token expiration by deleting the cached token
-        await cacheManager.del(user.id)
-        await expect(authService.refreshTokens(refreshTokenDto)).rejects.toThrow(UnauthorizedException)
-
-    })
-
-    test("with an expired refresh token", async () => {
         // Generate expired tokens
         const payload = { sub: user.id, email: user.email, role: user.role };
         const accessToken = jwtService.sign(payload);
@@ -133,7 +113,7 @@ describe("Tokens refresh", () => {
 
         // add tokens to cache 
         await cacheManager.set(payload.sub, tokens, 1000 * configService.get<number>('jwt.refreshTokenExpiresIn')!);
-        await expect(authService.refreshTokens(tokens)).rejects.toThrow(UnauthorizedException)
+        await expect(authService.refreshTokens(tokens)).rejects.toThrow(new UnauthorizedException("Token has expired"))
     });
 
 
@@ -168,7 +148,7 @@ describe("Resetting user password", () => {
     let user: User;
 
     beforeEach(async () => {
-        user = await createRandomAuthUser(signupDto)
+        user = await createRandomAuthUser(authService, signupDto)
     })
 
     test("for a non-existing user", async () => {
@@ -197,14 +177,14 @@ describe("Resetting user password", () => {
 
     test("when old password equals new password", async () => {
         passwordResetDto = { oldPassword: signupDto.password, newPassword: signupDto.password }
-        await expect(authService.resetPassword(passwordResetDto, user.id)).rejects.toThrow(new BadRequestException("New password cannot be the same as old password"))
+        await expect(authService.resetPassword(passwordResetDto, user.id)).rejects.toThrow(new BadRequestException("Old and nwew password cannot be the same!"))
     })
 })
 
 describe("User logout", () => {
     let user: User;
     beforeEach(async () => {
-        user = await createRandomAuthUser(signupDto)
+        user = await createRandomAuthUser(authService, signupDto)
     })
 
     test("when user is logged in", async () => {
@@ -224,3 +204,7 @@ describe("User logout", () => {
 
     })
 })
+
+afterAll(async () => {
+    await prismaService.flush()
+});

@@ -4,7 +4,7 @@ import { JsonWebTokenError, TokenExpiredError } from "@nestjs/jwt";
 
 export const handleJWTTokenError = (error) => {
     if (error instanceof TokenExpiredError) {
-        throw new UnauthorizedException('Access token has expired');
+        throw new UnauthorizedException('Token has expired');
     } else if (error instanceof JsonWebTokenError) {
         throw new UnauthorizedException('Invalid token');
     } else {

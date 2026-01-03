@@ -75,7 +75,7 @@ export class AuthService {
 
     async resetPassword(passwordResetDto: PasswordResetDto, userId: string) {
         const { oldPassword, newPassword } = passwordResetDto
-        if (oldPassword === newPassword) throw new BadRequestException("New password cannot be the same as old password")
+        if (oldPassword === newPassword) throw new BadRequestException("Old and nwew password cannot be the same!")
         const auth: Auth | null = await this.prisma.auth.findUnique({
             where: { userId }
         });
@@ -91,7 +91,6 @@ export class AuthService {
                 password: hashedPassword
             }
         })
-
         return { message: 'Password reset successful' }
     }
 
