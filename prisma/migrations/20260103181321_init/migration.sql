@@ -2,6 +2,9 @@
 CREATE SCHEMA IF NOT EXISTS "users";
 
 -- CreateEnum
+CREATE TYPE "users"."AccountStatus" AS ENUM ('ACTIVE', 'SUSPENDED', 'DELETED');
+
+-- CreateEnum
 CREATE TYPE "users"."Role" AS ENUM ('FREELANCER', 'CLIENT', 'ADMIN');
 
 -- CreateTable
@@ -10,6 +13,7 @@ CREATE TABLE "users"."auth" (
     "userId" TEXT NOT NULL,
     "email" VARCHAR(100) NOT NULL,
     "password" TEXT NOT NULL,
+    "lastLoginAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -22,7 +26,10 @@ CREATE TABLE "users"."users" (
     "email" VARCHAR(100) NOT NULL,
     "firstName" VARCHAR(50) NOT NULL,
     "lastName" VARCHAR(50) NOT NULL,
-    "role" "users"."Role" NOT NULL DEFAULT 'FREELANCER',
+    "businessName" VARCHAR(100),
+    "status" "users"."AccountStatus" NOT NULL DEFAULT 'ACTIVE',
+    "verified" BOOLEAN NOT NULL DEFAULT false,
+    "countryCode" VARCHAR(2) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

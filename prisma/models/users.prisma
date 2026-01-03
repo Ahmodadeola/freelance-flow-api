@@ -1,15 +1,15 @@
 model User {
-    id            String        @id @default(cuid())
-    email         String        @unique @db.VarChar(100)
-    firstName     String        @db.VarChar(50)
-    lastName      String        @db.VarChar(50)
-    business_name String        @db.VarChar(100)
-    auth          Auth?
-    status        AccountStatus @default(ACTIVE)
-    verified      Boolean       @default(false)
-    country       String        @db.VarChar(50)
-    createdAt     DateTime      @default(now())
-    updatedAt     DateTime      @updatedAt
+    id           String        @id @default(cuid())
+    email        String        @unique @db.VarChar(100)
+    firstName    String        @db.VarChar(50)
+    lastName     String        @db.VarChar(50)
+    businessName String?       @db.VarChar(100)
+    auth         Auth?
+    status       AccountStatus @default(ACTIVE)
+    verified     Boolean       @default(false)
+    countryCode  String        @db.VarChar(2)
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
 
     @@map("users")
     @@schema("users")

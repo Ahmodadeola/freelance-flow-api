@@ -1,12 +1,12 @@
 model Auth {
-    id          String   @id @default(cuid())
-    user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    id          String    @id @default(cuid())
+    user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
     userId      String
-    email       String   @unique @db.VarChar(100)
+    email       String    @unique @db.VarChar(100)
     password    String
-    lastLoginAt DateTime
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    lastLoginAt DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
 
     @@unique([userId])
     @@map("auth")
