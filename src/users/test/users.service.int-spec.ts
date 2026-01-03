@@ -17,7 +17,6 @@ beforeAll(async () => {
     }).compile()
     prismaService = moduleRef.get(PrismaService)
     userService = moduleRef.get(UsersService)
-    await prismaService.flush()
 })
 
 beforeEach(() => {

@@ -13,6 +13,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('jwt.accessTokenSecret'),
+        global: true,
         signOptions: { expiresIn: configService.get('jwt.accessTokenExpiresIn') },
       }),
       inject: [ConfigService],

@@ -101,9 +101,12 @@ export class AuthService {
     }
 
     async profile(userId: string) {
-        return this.prisma.user.findUnique({
+        const user = await this.prisma.user.findUnique({
             where: { id: userId },
         });
+        if (!user) throw new NotFoundException("User not found!")
+        return user
+
     }
 
     private async generateTokens(userId: string, email: string, role: string) {

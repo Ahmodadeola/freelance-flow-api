@@ -3,7 +3,7 @@ import { SignupDto } from "../dto/signup.dto";
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { App } from "supertest/types";
 import request from 'supertest';
-import { AccountStatus, Role } from "generated/prisma/enums";
+import { AccountStatus } from "generated/prisma/enums";
 import { AuthService } from "../auth.service";
 import { LoginDto } from "../dto/login.dto";
 import { User } from "generated/prisma/client";
@@ -308,7 +308,23 @@ describe("User logout", () => {
     })
 })
 
+describe("Fetching user profile", () => {
+    test("for an exisiting ", async () => {
+        const user = await createRandomAuthUser(authService, signupDto)
+        const { tokens: { accessToken } } = await authService.login({ email: user.email, password: signupDto.password })
+
+        return request(app.getHttpServer())
+            .get('/auth/profile')
+            .set('Authorization', `Bearer ${accessToken}`)
+            .expect(200)
+            .then(({ body: { data } }) => {
+                Object.entries(signupDto).forEach(([key, value]) => {
+                    if (key !== "password") expect(value).toBe(data[key])
+                })
+            })
+    })
+})
+
 afterAll(async () => {
-    await prismaService.flush()
     await app.close();
 });

@@ -40,8 +40,8 @@ export const randomSignupDto = (opts: Record<string, any> = {}) => ({
     firstName: opts?.firstName! || faker.person.firstName(),
     lastName: opts?.lastName || faker.person.lastName(),
     password: opts?.password || `_${faker.string.alphanumeric(10)}1`,
-    businessName: opts?.business_name || faker.company.name(),
-    countryCode: opts?.country_code || faker.location.countryCode(),
+    businessName: opts?.businessName || faker.company.name(),
+    countryCode: opts?.countryCode || faker.location.countryCode(),
     verified: opts?.verified || false,
     status: opts?.status || AccountStatus.ACTIVE
 })

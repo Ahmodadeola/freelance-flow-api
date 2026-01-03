@@ -29,7 +29,6 @@ beforeAll(async () => {
     jwtService = ctx.jwtService
     configService = ctx.configService
     cacheManager = ctx.cacheManager
-    await prismaService.flush()
 })
 
 beforeEach(() => {
@@ -206,6 +205,19 @@ describe("User logout", () => {
     })
 })
 
-afterAll(async () => {
-    await prismaService.flush()
-});
+describe("Fetching user profile", () => {
+    test("for an exisiting ", async () => {
+        const user = await createRandomAuthUser(authService, signupDto)
+        const profile = await authService.profile(user.id)
+
+        expect(profile?.verified).toBe(false)
+        Object.entries(signupDto).forEach(([key, value]) => {
+            if (key !== "password") expect(value).toBe(user[key])
+        })
+
+    })
+
+    test("for a non-existing user", async () => {
+        await expect(authService.profile(faker.string.alphanumeric(20))).rejects.toThrow(new NotFoundException("User not found!"))
+    })
+})
