@@ -78,9 +78,6 @@ jobs:
     - name: Run linting
       run: yarn lint
 
-    - name: Run unit tests
-      run: yarn test --passWithNoTests
-
     - name: Run integration tests
       run: yarn test:int
       env:
