@@ -9,17 +9,24 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { configLoader } from 'config';
 
-
 @Module({
-  imports: [ConfigModule.forRoot({
-    load: configLoader(),
-    isGlobal: true,
-    ignoreEnvFile: true,
-  }), UsersModule, AuthModule],
+  imports: [
+    ConfigModule.forRoot({
+      load: configLoader(),
+      isGlobal: true,
+      ignoreEnvFile: true,
+    }),
+    UsersModule,
+    AuthModule,
+  ],
   controllers: [AppController],
-  providers: [{
-    provide: APP_INTERCEPTOR,
-    useClass: ResponseInterceptor
-  }, AppService, PrismaService],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
+    },
+    AppService,
+    PrismaService,
+  ],
 })
-export class AppModule { }
+export class AppModule {}
