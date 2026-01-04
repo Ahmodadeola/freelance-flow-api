@@ -13,7 +13,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get('jwt.accessTokenSecret'),
-        signOptions: { expiresIn: configService.get('jwt.accessTokenExpiresIn') },
+        signOptions: {
+          expiresIn: configService.get('jwt.accessTokenExpiresIn'),
+        },
       }),
       inject: [ConfigService],
     }),
@@ -22,4 +24,4 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   controllers: [AuthController],
   providers: [AuthService, UsersService, PrismaService],
 })
-export class AuthModule { }
+export class AuthModule {}
