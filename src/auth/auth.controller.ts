@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, Patch, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './auth.guard';
@@ -8,8 +17,7 @@ import { SignupDto } from './dto/signup.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
-
+  constructor(private readonly authService: AuthService) {}
 
   @Post('signup')
   async signup(@Body() signupDto: SignupDto) {
@@ -34,11 +42,14 @@ export class AuthController {
     return this.authService.refreshTokens(refreshTokensDto);
   }
 
-  @Patch("password-reset")
+  @Patch('password-reset')
   @UseGuards(AuthGuard)
   @HttpCode(200)
-  async resetPassword(@Request() req: Request & { user: Record<string, any> }, @Body() passwordResetDto: PasswordResetDto) {
-    return await this.authService.resetPassword(passwordResetDto, req.user.sub)
+  async resetPassword(
+    @Request() req: Request & { user: Record<string, any> },
+    @Body() passwordResetDto: PasswordResetDto,
+  ) {
+    return await this.authService.resetPassword(passwordResetDto, req.user.sub);
   }
 
   @UseGuards(AuthGuard)

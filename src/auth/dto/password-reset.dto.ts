@@ -1,9 +1,9 @@
-import { IsNotEmpty, IsStrongPassword } from "class-validator";
+import { IsNotEmpty, IsStrongPassword } from 'class-validator';
 
 export class PasswordResetDto {
-    @IsStrongPassword()
-    oldPassword: string;
+  @IsStrongPassword()
+  oldPassword: string;
 
-    @IsStrongPassword()
-    newPassword: string;
+  @IsStrongPassword()
+  newPassword: string;
 }
