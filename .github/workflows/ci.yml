@@ -79,13 +79,6 @@ jobs:
     #   run: yarn lint
 
     - name: Run integration tests
-      run: yarn test:int
+      run: yarn test:int --watchAll=false
       env:
         NODE_ENV: test
-        DB_PROVIDER: postgresql
-        DB_USER: postgres
-        DB_PASSWORD: postgres
-        DB_HOST: localhost
-        DB_PORT: 5432
-        TEST_DB_NAME: freelance_flow_test_int
-        DB_NAME: freelance_flow_test
