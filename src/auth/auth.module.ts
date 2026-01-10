@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UsersService } from 'src/users/users.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtModule } from '@nestjs/jwt';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -23,6 +22,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     CacheModule.register(),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UsersService, PrismaService],
+  providers: [AuthService, PrismaService],
+  exports: [AuthService, JwtModule, CacheModule],
 })
-export class AuthModule {}
+export class AuthModule { }

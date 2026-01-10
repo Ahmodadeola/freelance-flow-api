@@ -15,12 +15,10 @@ import {
   randomSignupDto,
   setupTestingModule,
 } from 'test/test_utils';
-import { PrismaService } from 'src/prisma/prisma.service';
 
 const randomPassword = () => `_${faker.string.alphanumeric(10)}1`;
 
 let authService: AuthService;
-let prismaService: PrismaService;
 let signupDto: SignupDto;
 let app: INestApplication<App>;
 let cacheManager: Cache;
@@ -34,7 +32,6 @@ beforeAll(async () => {
 
   authService = ctx.authService;
   cacheManager = ctx.cacheManager;
-  prismaService = ctx.prismaService;
 
   app = ctx.moduleRef.createNestApplication();
   app.useGlobalPipes(
