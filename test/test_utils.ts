@@ -9,10 +9,12 @@ import { AuthService } from 'src/auth/auth.service';
 import { dropObjectFields } from 'src/common/helper';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { UsersService } from 'src/users/users.service';
 
 let prismaService: PrismaService;
 let authService: AuthService;
 let jwtService: JwtService;
+let userService: UsersService;
 let configService: ConfigService;
 let cacheManager: Cache;
 
@@ -25,6 +27,7 @@ export const setupTestingModule = async () => {
   authService = moduleRef.get(AuthService);
   jwtService = moduleRef.get(JwtService);
   configService = moduleRef.get(ConfigService);
+  userService = moduleRef.get(UsersService);
   cacheManager = moduleRef.get(Cache);
   await prismaService.flush();
 
@@ -33,6 +36,7 @@ export const setupTestingModule = async () => {
     prismaService,
     authService,
     jwtService,
+    userService,
     configService,
     cacheManager,
   };

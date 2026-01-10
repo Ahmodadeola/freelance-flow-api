@@ -17,7 +17,7 @@ import { SignupDto } from './dto/signup.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('signup')
   async signup(@Body() signupDto: SignupDto) {
@@ -30,8 +30,8 @@ export class AuthController {
     return await this.authService.login(loginDto);
   }
 
-  @UseGuards(AuthGuard)
   @Get('profile')
+  @UseGuards(AuthGuard)
   async profile(@Request() req) {
     return this.authService.profile(req.user.sub);
   }
@@ -52,8 +52,8 @@ export class AuthController {
     return await this.authService.resetPassword(passwordResetDto, req.user.sub);
   }
 
-  @UseGuards(AuthGuard)
   @Post('logout')
+  @UseGuards(AuthGuard)
   @HttpCode(200)
   async logout(@Request() req) {
     return this.authService.logout(req.user.sub);

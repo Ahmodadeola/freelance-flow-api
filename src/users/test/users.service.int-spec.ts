@@ -4,6 +4,7 @@ import { UsersService } from '../users.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { ConflictException } from '@nestjs/common';
 import { randomCreateUserDto } from 'test/test_utils';
+import { faker } from '@faker-js/faker';
 
 let userService: UsersService;
 
@@ -37,6 +38,32 @@ describe('Creating a user', () => {
       await userService.create(userDto);
     } catch (error) {
       expect(error).toBeInstanceOf(ConflictException);
+    }
+  });
+});
+
+
+describe("Updating a user", () => {
+  test('with valid data', async () => {
+    const user = await userService.create(userDto);
+    expect(user.email).toBe(userDto.email);
+
+    const newFirstName = faker.person.firstName();
+    const updatedUser = await userService.update(user.id, {
+      firstName: newFirstName,
+    });
+    expect(updatedUser.firstName).toBe(newFirstName);
+    expect(updatedUser.id).toBe(user.id);
+  });
+
+  test('that does not exist', async () => {
+    const fakeUserId = faker.string.uuid();
+    try {
+      await userService.update(fakeUserId, {
+        firstName: faker.person.firstName()
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error);
     }
   });
 });
